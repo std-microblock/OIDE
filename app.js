@@ -1,0 +1,1 @@
+require("./src/node/app")

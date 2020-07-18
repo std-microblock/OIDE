@@ -1,0 +1,726 @@
+<html>
+<script>
+    function download(filename, text) {
+        var pom = document.createElement('a');
+        pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+        pom.setAttribute('download', filename);
+
+        if (document.createEvent) {
+            var event = document.createEvent('MouseEvents');
+            event.initEvent('click', true, true);
+            pom.dispatchEvent(event);
+        }
+        else {
+            pom.click();
+        }
+    }
+</script>
+<style>
+    /*控制整个滚动条*/
+    ::-webkit-scrollbar {
+        background-color: #1e1e1e;
+        width: 15px;
+        border-left: 20px #323232;
+        height: 10px;
+        background-clip: padding-box;
+    }
+
+    /*滚动条两端方向按钮*/
+    ::-webkit-scrollbar-button {
+        background-color: #1e1e1e;
+    }
+
+    /*滚动条中间滑动部分*/
+    ::-webkit-scrollbar-thumb {
+        background-color: #4f4f4f;
+        border-radius: 0px;
+    }
+
+    /*滚动条右下角区域*/
+    ::-webkit-scrollbar-corner {
+        background-color: #1e1e1e;
+    }
+</style>
+
+<body>
+    <style>
+        .prompt {
+            width: 60%;
+            margin-left: 20%;
+            height: 80px;
+            box-shadow: 0px 0px 10px rgb(29, 29, 29);
+            z-index: 100;
+            position: absolute;
+            background: rgb(37, 37, 38);
+            margin-top: 30px;
+            user-select: none;
+        }
+
+        .promptinput {
+            width: calc(100% - 20px);
+            height: 30px;
+            background-color: rgb(60, 60, 60);
+            border: solid 1px rgb(30, 62, 85);
+            padding: 0px 1% 0px 1%;
+            margin-left: 10px;
+            color: white;
+            transition: all 0.2s;
+        }
+
+        .promptinput:focus {
+            box-shadow: 0px 0px 3px rgb(30, 62, 85);
+            outline: 0;
+        }
+
+        .prompttext {
+            margin-left: 10px;
+            color: white;
+            padding: 10px;
+            font-size: 13;
+            user-select: none;
+        }
+    </style>
+    <script>
+        let lastPMSResove, lastPMSReject;
+        prompt = (text) => {
+            document.querySelector(".prompttext").innerText = text
+            document.querySelector(".promptinput").value = ''
+            document.querySelector(".prompt").hidden = false
+
+            return new Promise((resolve, reject) => {
+                lastPMSResove = resolve;
+                lastPMSReject = reject
+            });
+        }
+        function promptend(event) {
+            if (event.keyCode == 13) {
+                lastPMSResove(document.querySelector(".promptinput").value)
+                document.querySelector(".prompt").hidden = true
+            }
+        }
+    </script>
+    <div class="prompt" hidden>
+        <div class="prompttext"></div>
+        <input type="text" class="promptinput" onkeyup="promptend(event)">
+    </div>
+    <style>
+        * {
+            transition: all 0.1s;
+        }
+
+        .titlebar {
+            position: absolute;
+            width: 100%;
+            height: 35px;
+            left: 0px;
+            top: 0px;
+            background-color: rgb(60, 60, 60);
+        }
+
+        .sidebar {
+            position: absolute;
+            width: 55px;
+            background-color: rgb(51, 51, 51);
+            height: calc(100% - 35px - 25px);
+            left: 0px;
+            top: 35px
+        }
+
+        .sizebaropened {
+    position: absolute;
+    width: 286px;
+    height: calc(100% - 35px - 25px - 40px);
+    left: 55px;
+    top: 35px;
+    background-color: rgb(37, 37, 38);
+    overflow: scroll;
+    color:white;
+    font-size: 10;
+    padding: 20px;
+}
+
+        .bottombar {
+            position: absolute;
+            bottom: 0px;
+            height: 25px;
+            width: 100%;
+            left: 0px;
+            background-color: rgb(0, 122, 204);
+        }
+
+        .windows {
+            float: left;
+            position: absolute;
+            width: calc(100% - 306px - 55px);
+            height: calc(100% - 35px - 25px);
+            top: 35px;
+            left: calc(306px + 55px);
+            background-color: rgb(30, 30, 30);
+
+        }
+
+        .windowbar {
+
+            width: 100%;
+            height: 45px;
+            position: absolute;
+            left: 0px;
+            top: 0px;
+            background-color: rgb(37, 37, 38);
+
+        }
+
+        .atab {
+            background-color: rgb(45, 45, 45);
+            border: solid 1px rgb(37, 37, 38);
+            width: 147px;
+            height: 43px;
+            float: left;
+            cursor: pointer;
+            position: relative;
+            color: rgb(148, 148, 148);
+            line-height: 43px;
+            text-align: center;
+            font-size: 10;
+            user-select: none;
+        }
+
+        .seltab {
+            background-color: rgb(30, 30, 30);
+
+            color: rgb(255, 255, 255);
+            line-height: 43px;
+            text-align: center;
+            font-size: 10;
+        }
+
+        .titlebutton {
+            display: table-cell;
+            padding: 0px 10px 0px 10px;
+            color: rgb(142, 142, 142);
+            line-height: 35px;
+            user-select: none;
+            transition: none;
+            position: relative;
+            font-size: 10;
+        }
+
+        .titlebutton:hover {
+            background-color: rgb(80, 80, 80);
+            color: rgb(197, 197, 197)
+        }
+
+        .icon {
+            float: left;
+            user-select: none;
+            margin-left: 10px;
+            line-height: 35px;
+            color: white;
+            font-family: Consolas;
+            padding-right: 20px;
+            font-weight: 600;
+        }
+
+        .pulldownmenu {
+            width: 340px;
+            height: 500px;
+            padding-top: 10px;
+
+            box-shadow: 0px 0px 10px rgb(29, 29, 29);
+            background: rgb(37, 37, 38);
+            position: absolute;
+            z-index: 100;
+            position: absolute;
+        }
+
+        .pdmenubar {
+            width: calc(100% - 50px);
+            height: 30px;
+            padding-left: 30px;
+            line-height: 30px;
+            padding: 0px 20px 0px 30px;
+            transition: none;
+        }
+
+        .pdmenubar:hover {
+            background: rgb(9, 71, 113);
+            color: rgb(255, 255, 255)
+        }
+    </style>
+    <div class="titlebar">
+
+        <div class="icon">
+            <style>
+                .cicon {
+                    font-size: 25;
+
+                }
+
+                .ciconsvg {
+                    margin-top: 4px;
+                }
+            </style>
+            <span role="img" aria-label="box-plot" class="anticon anticon-box-plot cicon"><svg viewBox="64 64 896 896"
+                    focusable="false" class="ciconsvg" data-icon="box-plot" width="1em" height="1em" fill="currentColor"
+                    aria-hidden="true">
+                    <path d="M296 368h88v288h-88zm152 0h280v288H448z" fill="#e6f7ff"></path>
+                    <path
+                        d="M952 224h-52c-4.4 0-8 3.6-8 8v248h-92V304c0-4.4-3.6-8-8-8H232c-4.4 0-8 3.6-8 8v176h-92V232c0-4.4-3.6-8-8-8H72c-4.4 0-8 3.6-8 8v560c0 4.4 3.6 8 8 8h52c4.4 0 8-3.6 8-8V548h92v172c0 4.4 3.6 8 8 8h560c4.4 0 8-3.6 8-8V548h92v244c0 4.4 3.6 8 8 8h52c4.4 0 8-3.6 8-8V232c0-4.4-3.6-8-8-8zM384 656h-88V368h88v288zm344 0H448V368h280v288z"
+                        fill="#1890ff"></path>
+                </svg></span>
+        </div>
+        <script>
+            function togglePDM(ele) {
+                document.querySelectorAll(".pulldownmenu").forEach((e) => { e.hidden = 1 })
+                document.querySelectorAll(".titlebutton").forEach((e) => { if (e.getAttribute("style") != "") e.setAttribute("style", "") })
+                if (!ele.classList.contains('titlebutton')) return 0;
+                ele.children[0].hidden = (ele.children[0].hidden) ? 0 : 1
+                ele.style.background = (ele.children[0].hidden) ? "" : "rgb(80, 80, 80)"
+                ele.style.color = (ele.children[0].hidden) ? "" : "rgb(197, 197, 197)"
+
+
+            }
+
+            async function openCustomPage() {
+                createWindow(await prompt(`请输入窗口名 (不宜过长)`), await prompt(`请输入url`))
+            }
+        </script>
+
+
+    </div>
+    <div class="sidebar"></div>
+    <div class="sizebaropened"><br><br></div>
+    <style>
+        .terminal {
+            width: calc(100% - 361px);
+            height: 300px;
+            left: 361px;
+            bottom: 25px;
+            position: absolute;
+            background-color: rgb(30, 30, 30);
+            z-index: 100;
+            border-top: solid 1px rgb(65, 65, 65);
+        }
+
+        .terminal>.closewin {
+            color: rgba(255, 255, 255, 0.657);
+            user-select: none;
+            margin-right: 15px;
+            font-size: 25;
+            font-weight: 200;
+            height: 30px;
+        }
+
+        .terminput {
+            position: absolute;
+            bottom: 0px;
+            width: 100%;
+            height: 23px;
+            background-color: rgba(36, 36, 36, 0);
+            border: none;
+            color: white;
+            padding-left: 20px;
+        }
+
+        .terminput:focus {
+            outline: none;
+        }
+
+        .termcontent {
+            height: calc(100% - 25px - 23px);
+            width: calc(100% - 20px);
+            position: absolute;
+            left: 0px;
+            top: 20px;
+            padding-left: 20px;
+            padding-top: 5px;
+            color: white;
+            overflow-y: scroll;
+            overflow-x: hidden;
+        }
+
+        .termcontent>* {
+            width: calc(100vw - 361px);
+        }
+    </style>
+    <script>
+        function logToTerminal(txt) {
+            let u = createDocument(`<b></b>`);
+            u.innerHTML = `[O-IDE] ${txt}`
+            u.innerHTML += "<br>"
+            document.querySelector(".termcontent").appendChild(u)
+        }
+        function terminalMsg(txt) {
+            let u = createDocument(`<div></div>`);
+            u.innerHTML = `${txt}`
+            u.innerHTML += "<br>"
+            document.querySelector(".termcontent").appendChild(u)
+        }
+        async function chknew(a) {
+
+            let rawData = await fetch('/term');
+            let data = await rawData.text()
+            if (data == "") return;
+
+            data.split('\n').forEach((a) => {
+                terminalMsg(a);
+            })
+            if (autoScroll == 1) scrollTerminal()
+
+        }
+        setInterval(chknew, 500)
+        async function runCommand(cmd) {
+            for (var x = 0; x < 15; x++) {
+                setTimeout(chknew, 100 * x)
+            }
+            return await (await fetch('/command?' + cmd)).text()
+
+        }
+    </script>
+    <div class="terminal">
+        <div class="termcontent"></div>
+        <div class="closewin" onclick="document.querySelector('.terminal').hidden=true">×</div>
+        <input type="text" class="terminput" onkeyup="if (event.keyCode == 13) {
+        runCommand(document.querySelector('.terminput').value)
+        document.querySelector('.terminput').value=''
+    }">
+    </div>
+    <style>
+        .closewin {
+            float: right;
+            position: absolute;
+            right: 0px;
+            color: rgba(255, 255, 255, 0);
+            font-size: 10;
+            width: 20px;
+            height: 100%;
+            margin-right: 10px;
+            top: 0px;
+        }
+
+        .closewin:hover {
+            color: white;
+        }
+
+        .bottombutton {
+            height: 25px;
+            padding: 0px 10px 0px 10px;
+            display: table-cell;
+            cursor: pointer;
+            user-select: none;
+            transition: none;
+            color: white;
+            margin-left: 10px;
+            float: left;
+            font-size: 10px;
+            line-height: 25px;
+        }
+
+        .bottombuttonright {
+            height: 25px;
+            cursor: pointer;
+            padding: 0px 10px 0px 10px;
+            display: table-cell;
+            user-select: none;
+            transition: none;
+            color: white;
+            margin-right: 10px;
+            float: right;
+            font-size: 10px;
+            line-height: 25px;
+        }
+
+        .bottombuttonright:hover {
+            background: rgb(31, 138, 210);
+        }
+
+        .bottombutton:hover {
+            background: rgb(31, 138, 210);
+        }
+
+        .bbicon {
+            margin-top: 5px;
+            font-size: 14;
+        }
+    </style>
+    <div class="bottombar"></div>
+    <div class="windows">
+        <div class="windowbar">
+        </div>
+        <style>
+            .win {
+                width: 100%;
+                height: calc(100% - 55px);
+                top: 55px;
+                position: absolute;
+
+            }
+        </style>
+        <div class="window">
+        </div>
+    </div>
+    <script>
+        window.onbeforeunload = function(e) {
+      var dialogText = '确认刷新吗？所有的Tab将会丢失';
+      e.returnValue = dialogText;
+      return dialogText;
+    };//刷新
+        document.onkeydown = async function (event) {
+            if (event.keyCode == 116) {
+                if (getNowWindow().window.getAttribute("src") == "/editor") {
+                await savefile(getNowWindow().window.contentWindow.savePath + ".cpp", getNowWindow().window.contentDocument.querySelector('textarea').value, "codes/")
+
+                await runCommand(
+                    "echo.----------------Started-------------------&" +
+                    "cd (root)/src/node/compile/bin/ & g++ -m32 (root)/codes/"
+                    + getNowWindow().window.contentWindow.savePath + ".cpp"
+                    + " -o (root)/codes/" + getNowWindow().window.contentWindow.savePath +
+                    "&echo.--------------Compile ends----------------- & (root)/codes/" + getNowWindow().window.contentWindow.savePath
+                    + "&echo.------------End of operation---------------")
+
+            } else {
+                prompt("打开的Tab不是一个编辑器.")
+            }
+            //等同于按键C&R
+                event.keyCode = 0;
+                event.cancelBubble = true;
+                return false;
+            }
+            let e=event
+            var keyCode = e.keyCode || e.which || e.charCode;
+        var ctrlKey = e.ctrlKey || e.metaKey;
+        if(ctrlKey && keyCode == 83) {
+            download("",getEditorText())
+e.preventDefault();
+        return false;
+        }
+            
+        }
+
+
+
+
+
+        function closeWindow(wid) {
+            console.tabmsg("销毁 Tab" + " " + wid + "")
+            document.querySelectorAll(".atab").forEach((a) => {
+                if (a.getAttribute('linkwinid') == wid) a.remove()
+            })
+            document.querySelectorAll(".win").forEach((a) => {
+                if (a.getAttribute('wid') == wid) a.remove()
+            })
+        }
+        function createDocument(txt, onclick = () => { }) {
+            const template = `<div class='child'>${txt}</div>`;
+            let doc = new DOMParser().parseFromString(template, 'text/html');
+            let div = doc.querySelector('.child').children[0];
+            div.onclick = onclick
+            return div;
+        }
+        /*
+        作者：玄魂
+        链接：https://juejin.im/post/5b784074518825430e570a7f
+        来源：掘金
+        著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
+        */
+
+        function getWindowTitleByID(wid) {
+            let tabs = document.querySelectorAll('.atab')
+            for (var x = 0; x < tabs.length; x++) {
+                if (tabs[x].getAttribute('linkwinid') == wid) return tabs[x].firstChild.data
+            }
+            return "undefined"
+        }
+        let lastWinID = 0;
+        console.tabmsg = (msg) => {
+            console.log('%c[TabManger] %c' + msg, "color:rgb(45, 45, 45);font-size:16px;", "color:gray")
+        }
+
+        function createBottomButton(onclick, html, text = "", right = 0) {
+            let tmpButtonHtml = `
+ <div class="bottombutton${(right == 1) ? "right" : ""}" title="${text}">
+            ${html}
+        </div>
+`
+            document.querySelector(".bottombar").appendChild(createDocument(tmpButtonHtml, onclick))
+        }
+
+        function createPullDownMenu(title, onclick, addto_title) {
+            document.querySelectorAll('.titlebutton').forEach((item) => {
+                if (item.innerText.split('\n')[0].indexOf(addto_title) != -1) {
+                    item.children[0].appendChild(createDocument(`<div class="pdmenubar">${title}</div>`, onclick))
+
+                }
+
+            })
+
+        }
+
+        function createMenu(text) {
+            let menuHtmlTmp = `
+<div class="titlebutton">${text}<div class="pulldownmenu" hidden=""></div></div>
+`
+            document.querySelector("body > div.titlebar").appendChild(createDocument(menuHtmlTmp, () => {
+                togglePDM(event.target)
+            }))
+        }
+        function createWindow(title, src) {
+            let nowWinID = lastWinID++
+            createTab(nowWinID, title)
+            let winEleTmp = document.createElement('iframe')
+            winEleTmp.setAttribute("frameborder", 0)
+            winEleTmp.setAttribute("wid", nowWinID)
+            winEleTmp.src = src
+            winEleTmp.hidden = true
+            winEleTmp.classList.add("win")
+            document.querySelector(".window").appendChild(winEleTmp)
+            if (document.querySelectorAll(".atab").length == 1) document.querySelectorAll(".atab")[0].click()
+            return nowWinID
+        }
+        function clearSelTabs() {
+            document.querySelectorAll(".seltab").forEach(a => {
+                a.classList.remove("seltab")
+            })
+        }
+        function createTab(wid, name) {
+            // 创建Tab
+            document.querySelectorAll(".atab").forEach(a => {
+                if (a.getAttribute("linkwinid") == wid) {
+                    throw Error("\n\nThe same WindowID already exists\n错误：已经存在相同的WindowID\n")
+                }
+            })
+            console.tabmsg("创建 Tab" + name + "(" + wid + ")")
+            let tabEle = document.createElement('div')
+            tabEle.classList.add('atab')
+            tabEle.innerHTML = name + `<div class="closewin" onclick="closeWindow(${wid})">×</div>`
+
+            tabEle.setAttribute("linkwinid", wid)
+            tabEle.onclick = (e) => {
+                if (!e.toElement.hasAttribute("linkwinid")) return 0;
+                clearSelTabs()
+                e.toElement.classList.add('seltab')
+                changeToWin(e.toElement.getAttribute("linkwinid"))
+            }
+            document.querySelector(".windowbar").appendChild(tabEle)
+        }
+        function changeToWin(wid) {
+            console.tabmsg("切换至 Win" + wid)
+            document.querySelectorAll(".win").forEach((a) => {
+                if (a.getAttribute("wid") == wid) {
+                    a.hidden = false
+                } else {
+                    a.hidden = true
+                }
+            })
+        }
+        function getNowWindow() {
+            let tmp = {
+                wid: 0,
+                window: null,
+            }
+            document.querySelectorAll(".win").forEach((a) => {
+                if (!a.hidden) {
+                    tmp.wid = a.getAttribute("wid")
+                    tmp.window = a
+                }
+            })
+            return tmp
+        }
+        function getEditorText() {
+            if (getNowWindow().window.getAttribute("src") == "/editor") {
+                return getNowWindow().window.contentDocument.querySelector('textarea').value
+            } else {
+                prompt("这不是一个编辑器！")
+                throw Error("选择的TAB不是编辑器")
+            }
+        }
+        function refrashSelWindow() {
+            document.querySelectorAll(".win").forEach((a) => {
+                if (a.hidden == false) a.src = a.src
+            })
+        }
+
+        async function savefile(name, data, path = "saves/") {
+            return await fetch(`/savefile`, {
+                "method": "POST", "body": JSON.stringify({ data: data, name: path + name }),
+                headers: {
+                    'content-type': 'application/json'
+                },
+            })
+        }
+        /*初始化*/
+
+        createBottomButton(() => {
+            refrashSelWindow()
+
+        }, ` <span role="img" aria-label="sync" class="anticon anticon-sync"><svg viewBox="64 64 896 896"
+                    focusable="false" class="bbicon anticon-spin" data-icon="sync" width="1em" height="1em"
+                    fill="currentColor" aria-hidden="true">
+                    <path
+                        d="M168 504.2c1-43.7 10-86.1 26.9-126 17.3-41 42.1-77.7 73.7-109.4S337 212.3 378 195c42.4-17.9 87.4-27 133.9-27s91.5 9.1 133.8 27A341.5 341.5 0 01755 268.8c9.9 9.9 19.2 20.4 27.8 31.4l-60.2 47a8 8 0 003 14.1l175.7 43c5 1.2 9.9-2.6 9.9-7.7l.8-180.9c0-6.7-7.7-10.5-12.9-6.3l-56.4 44.1C765.8 155.1 646.2 92 511.8 92 282.7 92 96.3 275.6 92 503.8a8 8 0 008 8.2h60c4.4 0 7.9-3.5 8-7.8zm756 7.8h-60c-4.4 0-7.9 3.5-8 7.8-1 43.7-10 86.1-26.9 126-17.3 41-42.1 77.8-73.7 109.4A342.45 342.45 0 01512.1 856a342.24 342.24 0 01-243.2-100.8c-9.9-9.9-19.2-20.4-27.8-31.4l60.2-47a8 8 0 00-3-14.1l-175.7-43c-5-1.2-9.9 2.6-9.9 7.7l-.7 181c0 6.7 7.7 10.5 12.9 6.3l56.4-44.1C258.2 868.9 377.8 932 512.2 932c229.2 0 415.5-183.7 419.8-411.8a8 8 0 00-8-8.2z">
+                    </path>
+                </svg></span>`, "刷新当前页面（会丢失数据）", 1)
+
+        createBottomButton(async () => {
+            if (getNowWindow().window.getAttribute("src") == "/editor") {
+                await savefile(getNowWindow().window.contentWindow.savePath + ".cpp", getNowWindow().window.contentDocument.querySelector('textarea').value, "codes/")
+
+                await runCommand(
+                    
+                    "echo.----------------Started-------------------&" +
+                    "cd (root)/src/node/compile/bin/ & ren "
+                    + getNowWindow().window.contentWindow.savePath + ".exe"+" _.exe|echo \"\" & g++ -m32 (root)/codes/"
+                    + getNowWindow().window.contentWindow.savePath + ".cpp"
+                    + " -o (root)/codes/" + getNowWindow().window.contentWindow.savePath +
+                    "&echo.--------------Compile ends----------------- & (root)/codes/" + getNowWindow().window.contentWindow.savePath
+                    + "&echo.------------End of operation---------------")
+
+            } else {
+                prompt("打开的Tab不是一个编辑器.")
+            }
+        }, `C&R`, "编译&运行", 1)
+
+
+        createMenu("文件")
+        createPullDownMenu("打开自定义页面", () => { openCustomPage() }, "文件");
+        createPullDownMenu("创建编辑器", () => { createWindow(`Editor`, `/editor`) }, "文件");
+        createPullDownMenu("打开帮助页面", () => { createWindow(`Doc`, `/doc`) }, "文件");
+        createPullDownMenu("保存当前编辑器", () => {
+            if (getNowWindow().window.getAttribute("src") == "/editor") {
+                download("tmp.cpp", getNowWindow().window.contentDocument.querySelector('textarea').value)
+            } else {
+                prompt("这不是一个编辑器，无法被保存！")
+            }
+        }, "文件");
+
+        function scrollTerminal() {
+            document.querySelector(".termcontent").scrollTo(0, 1000000000)
+        }
+        let autoScroll = 1
+
+        createMenu("终端")
+        createPullDownMenu("显示终端", () => { document.querySelector('.terminal').hidden = false }, "终端");
+        createPullDownMenu("隐藏终端", () => { document.querySelector('.terminal').hidden = true }, "终端");
+        createPullDownMenu("自动滚动", () => { autoScroll = (autoScroll) ? 0 : 1; logToTerminal("自动滚动状态：" + ((autoScroll) ? "开启" : "关闭")) }, "终端");
+
+    </script>
+</body>
+<script>
+    window.onclick = (e) => {
+        let hidePDMFlag = 1
+        e.path.forEach((r) => {
+            if (r.classList != undefined) {
+                if (r.classList.contains("titlebutton")) hidePDMFlag = (hidePDMFlag == 2) ? 2 : 0
+                if (r.classList.contains("pdmenubar")) hidePDMFlag = 2
+            }
+
+        })
+        if (hidePDMFlag == 0) return 0;
+
+        document.querySelectorAll(".pulldownmenu").forEach((e) => { if (e.hidden == 0) e.hidden = 1 })
+        document.querySelectorAll(".titlebutton").forEach((e) => { if (e.getAttribute("style") != "") e.setAttribute("style", "") })
+    }
+</script>
+<script src="/addons"></script>
+
+</html>

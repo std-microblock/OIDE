@@ -1,0 +1,489 @@
+<html>
+
+<body>
+    <link rel="stylesheet" href="/highlight_stylesheet">
+    <style>
+        * {
+            font: 14px/1.5 "Consolas", 'Courier New', "monospace";
+        }
+
+        .t_input {
+            color: #ffffff00;
+            background-color: #ffffff00;
+            position: absolute;
+            left: 20px;
+            height: 10000px;
+            width: 10000px;
+            height: 10000px;
+            padding: 0;
+            caret-color: white;
+            border-style: none;
+            resize: none;
+        }
+
+
+        body {
+            background-color: #1e1e1e;
+        }
+
+        .t_input:focus {
+            border-style: none;
+            outline: none;
+        }
+
+        .f_input {
+            box-shadow: 10px 0px 0px #1e1e1e;
+            position: absolute;
+            left: 20px;
+            color: white;
+            height: 10000px;
+            width: 10000px;
+            height: 10000px;
+            background-color: #1e1e1e;
+            transition: none;
+        }
+
+        .f_input>* {
+            transition: none;
+        }
+
+        .scroll {
+            position: relative;
+            height: 20000px;
+            left: 0px;
+            right: 10px;
+            overflow: scroll;
+        }
+
+        /*控制整个滚动条*/
+        ::-webkit-scrollbar {
+            background-color: #1e1e1e;
+            width: 15px;
+            border-left: 20px #323232;
+            height: 10px;
+            background-clip: padding-box;
+        }
+
+        /*滚动条两端方向按钮*/
+        ::-webkit-scrollbar-button {
+            background-color: #1e1e1e;
+        }
+
+        /*滚动条中间滑动部分*/
+        ::-webkit-scrollbar-thumb {
+            background-color: #4f4f4f;
+            border-radius: 0px;
+        }
+
+        /*滚动条右下角区域*/
+        ::-webkit-scrollbar-corner {
+            background-color: #1e1e1e;
+        }
+
+        .lineNum {
+            float: left;
+            background-color: #1e1e1e;
+            color: #858585;
+            width: 50px;
+            text-align: right;
+        }
+
+        * {
+
+            transition: all 0.5s;
+        }
+
+        .highlight:hover {
+            border-radius: 4px;
+            background-color: #484b4d !important;
+            color: white !important;
+
+        }
+
+        i {
+            color: rgb(0, 151, 251)
+        }
+    </style>
+    <div class="lineNum">1<br>2</div>
+    <div class="scroll">
+
+        <div class="f_input"></div>
+        <textarea class="t_input"></textarea>
+    </div>
+    <script src="autoFillRules.js"></script>
+    <script>
+
+        let lastCurStr, lastCurPos
+
+        function html2Escape(sHtml) {
+            //html转义
+            return sHtml.replace(/[<>&"]/g, function (c) {
+                return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c];
+            });
+        }
+
+        var myInput = document.getElementsByTagName("textarea")[0];
+        if (myInput.addEventListener) {
+            myInput.addEventListener('keydown', this.keyHandler, false);
+        } else if (myInput.attachEvent) {
+            myInput.attachEvent('onkeydown', this.keyHandler); /* damn IE hack */
+        }
+
+        async function savefile(name,data,path="saves/"){
+            return await fetch(`/savefile`, {
+                "method": "POST", "body": JSON.stringify({ data: data,name:path+name }),
+                headers: {
+                    'content-type': 'application/json'
+                },
+            })
+        }
+
+        async function keyHandler(e) {
+            console.log("Pressed keycode："+e.keyCode)
+            if (sel('.floattips').hidden == true) return 1;
+            if (e.keyCode == 40) {
+                let lst = document.querySelectorAll(".alineoftips")
+                for (var u = 0; u < lst.length; u++) {
+                    if (lst[u].classList.contains("tipsel")) {
+                        if(u>lst.length-1){
+                            sel('.floattips').hidden = true
+                            if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                return false;
+                        }
+                        lst[(u + 1) % lst.length].classList.add("tipsel")
+                        lst[u].classList.remove("tipsel")
+                        break;
+                    }
+                }
+
+                if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                return false;
+
+            }
+            if (e.keyCode == 38) {
+                let lst = document.querySelectorAll(".alineoftips")
+                for (var u = 0; u < lst.length; u++) {
+                    if (lst[u].classList.contains("tipsel")) {
+                        if(u<2){
+                            sel('.floattips').hidden = true
+                            if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                return false;
+                        }
+                        lst[(u - 1) % lst.length].classList.add("tipsel")
+                        lst[u].classList.remove("tipsel")
+                        break;
+                    }
+                }
+
+                if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                return false;
+
+            }
+
+            var keyCode = e.keyCode || e.which || e.charCode;
+        var ctrlKey = e.ctrlKey || e.metaKey;
+        if(ctrlKey && keyCode == 83) {
+            download("",getInputValue())
+e.preventDefault();
+        return false;
+        }
+
+            for (var forv = 0; forv < document.querySelectorAll(".alineoftips").length; forv++) {
+                let a = document.querySelectorAll(".alineoftips")[forv]
+                if (!a.classList.contains("tipsel"))continue;
+                let json = JSON.parse(unescape(a.getAttribute("json")))
+                
+                if (descriptions[json.type].key == e.keyCode) {
+
+                    document.querySelector("textarea").style.caretColor = "#ffffff00"
+                    let activityText = await descriptions[json.type].activity(lastCurStr, json) + " "
+                    let utxt=getInputValue().slice(0, lastCurPos - lastCurStr.length)
+                    
+                    document.querySelector("textarea").value = getInputValue().slice(0, lastCurPos - lastCurStr.length) + activityText + " " +
+                        getInputValue().slice(lastCurPos)
+                    document.getElementsByClassName("t_input")[0].oninput()
+                    if (e.preventDefault) {
+                        e.preventDefault();
+                    }
+                    setTimeout((lt) => {
+                        document.querySelector("textarea").selectionStart = lt
+
+                        document.querySelector("textarea").selectionEnd = document.querySelector("textarea").selectionStart
+                        document.querySelector("textarea").style.caretColor = "#ffffff"
+                    }, 50, (utxt +activityText).length)
+                    
+                    return false;
+
+                }
+            }
+
+
+
+        }
+        let editorID=Math.ceil(Math.random()*1000000),createDate=new Date().toJSON(),saveNum=0;window.savePath="Editor"+editorID
+        setInterval(()=>{
+            savefile(window.savePath+" Save-"+Math.floor(saveNum/12),getInputValue())
+            console.log('%c[Editor][AutoSave] %cAutoSaved', "color:rgb(145, 45, 145);font-size:16px;", "color:gray")
+            saveNum++;
+        },5000)
+
+
+        function sel(a) { return document.querySelector(a) }
+
+        window.onclick = () => {
+            sel('.floattips').hidden = true
+        }
+
+
+        var textTmp = "";
+        for (var x = 1; x < 10000; x++)textTmp += (x + "\n")
+        document.querySelector(".lineNum").innerText = textTmp
+        let divInput = document.getElementsByClassName("f_input")[0], getInputValue = () => { return document.getElementsByClassName("t_input")[0].value }
+        document.getElementsByClassName("t_input")[0].oninput = (e) => {
+
+            document.querySelector("textarea").value=document.querySelector("textarea").value.replace(/	/g,"    ")
+            //处理其他地方拷过来的Tab
+
+
+            let el = document.getElementsByClassName("t_input")[0]
+            let start = el.selectionStart, end = el.selectionEnd;
+            
+            // -------------------------
+            // 处理语法提示
+            if (start == end) {
+                let nowInputingWord = getInputValue().substr(0, start).split("\n").pop()
+                const splitSymbols = "()*&^%$#@! :\"\\/,.`~-=_+\n".split('')
+
+     
+                splitSymbols.forEach((a) => {
+                    nowInputingWord = nowInputingWord.split(a).pop();
+                })
+               
+
+                function similar(s, t, f) {
+    if (!s || !t) {
+        return 0
+    }
+    var l = s.length > t.length ? s.length : t.length
+    var n = s.length
+    var m = t.length
+    var d = []
+    f = f || 3
+    var min = function(a, b, c) {
+        return a < b ? (a < c ? a : c) : (b < c ? b : c)
+    }
+    var i, j, si, tj, cost
+    if (n === 0) return m
+    if (m === 0) return n
+    for (i = 0; i <= n; i++) {
+        d[i] = []
+        d[i][0] = i
+    }
+    for (j = 0; j <= m; j++) {
+        d[0][j] = j
+    }
+    for (i = 1; i <= n; i++) {
+        si = s.charAt(i - 1)
+        for (j = 1; j <= m; j++) {
+            tj = t.charAt(j - 1)
+            if (si === tj) {
+                cost = 0
+            } else {
+                cost = 1
+            }
+            d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost)
+        }
+    }
+    let res = (1 - d[n][m] / l)
+    return res.toFixed(f)
+}
+/*
+————————————————
+版权声明：本文为CSDN博主「何必诗债换酒钱」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/u014395524/java/article/details/100562174
+相似度算法
+*/
+
+                let matchedList=[]
+                words.forEach((a) => {
+                    if (a.keyword.indexOf(nowInputingWord) != -1) {
+                        matchedList.push({html:`
+                        <div json="${escape(JSON.stringify(a))}" class="alineoftips">[${html2Escape(descriptions[a.type].name)}] ${html2Escape(a.keyword).replace(nowInputingWord, `<i>${nowInputingWord}</i>`)}<div class="tipshelper">${html2Escape(descriptions[a.type].desc)}</div></div>
+                        `,xsd:similar(a.keyword,nowInputingWord)})
+                    }
+                })
+                matchedList.sort(
+                    (a,b)=>{
+                    return b.xsd-a.xsd;
+                    }
+                )
+           if(matchedList.length!=0)
+                matchedList[0].html=matchedList[0].html.replace(`class="alineoftips"`,`class="alineoftips tipsel"`)
+               let htmlGen=""
+                matchedList.forEach((a)=>{
+                    htmlGen+=a.html
+                })
+                let canvasTX = sel("canvas").getContext('2d');
+                canvasTX.font = "14px/1.5 Consolas"
+                function getOccurrences(str, text) {
+                    // The number of occurrences of the string
+                    var x = 0;
+                    while (str.indexOf(text) != -1) {
+                        str = str.replace(text, ""); x++;
+
+                    }
+                    return x;
+                }
+                // 获取元素的绝对位置坐标（相对于页面左上角）
+                function getElementPagePosition(element) {
+                    //计算x坐标
+                    var actualLeft = element.offsetLeft;
+                    var current = element.offsetParent;
+                    while (current !== null) {
+                        actualLeft += current.offsetLeft;
+                        current = current.offsetParent;
+                    }
+                    //计算y坐标
+                    var actualTop = element.offsetTop;
+                    var current = element.offsetParent;
+                    while (current !== null) {
+                        actualTop += (current.offsetTop + current.clientTop);
+                        current = current.offsetParent;
+                    }
+                    //返回结果
+                    return { x: actualLeft, y: actualTop }
+                }
+
+                if (htmlGen != "") {
+                    sel('.floattips').innerHTML = htmlGen
+                    sel('.floattips').hidden = false
+                    sel('.floattips').style.left = canvasTX.measureText(getInputValue().substr(0, start).split("\n").pop()).width + getElementPagePosition(sel('.f_input')).x + 50
+                    sel('.floattips').style.top = 21 * getOccurrences(getInputValue().substr(0, start), "\n") - window.scrollY + 20
+                }
+                else {
+                    sel('.floattips').hidden = true
+                }
+              
+                lastCurStr = nowInputingWord
+                lastCurPos = start
+                console.log("String being entered:" + nowInputingWord + "     |    The position of cursor:" + start)
+                if(nowInputingWord.length==0)sel('.floattips').hidden = true
+            } else {
+                console.log("The user is selecting a string and the analysis is terminated")
+            }
+            // -------------------------
+            processText(getInputValue()).then((e) => {
+                divInput.innerHTML = e
+            })
+        }
+
+
+        async function processText(text) {
+            /*
+            userFormater.forEach((a)=>{
+                text=a(text)
+            })
+            specialReplaceRules.forEach((a, b) => {
+                switch (a.mode) {
+                    case "strict": {
+                        
+                        text = text.replace(RegExp(a.from, "g"), a.to)
+                        break;
+                    }
+                    case "only-a-word": {
+                        text = text.replace(RegExp("\\b" + a.from + "\\b", "g"), a.to)
+                        break;
+                    }
+                }
+            })
+            highLightList.forEach((a, b) => {
+                switch (a.mode) {
+                    case "strict": {
+                        a.RegExps.forEach((rule, ruleNum) => {
+                            console.log(rule+"-|-"+text)
+                            text = text.replace(RegExp(rule, "g"), `<r class="highlight" style="color:${a.color};background-color:${a.backgroundColor};${a.userCss}">${a.plainTexts[ruleNum]}</r>`)
+                        })
+
+                        break;
+                    }
+                    case "only-a-word": {
+                        a.RegExps.forEach((rule, ruleNum) => {
+                            
+                            text = text.replace(RegExp(`\\b${rule}\\b`, "g"), `<r class="highlight" style="color:${a.color};background-color:${a.backgroundColor};${a.userCss}">${a.plainTexts[ruleNum]}</r>`)
+                        })
+                        break;
+                    }
+                }
+
+
+            })*/
+
+            let result = await fetch(`/highlight`, {
+                "method": "POST", "body": JSON.stringify({ data: text }),
+                headers: {
+                    'content-type': 'application/json'
+                },
+            })
+            return await (await result.text()).replace(/\n/g,"<br>");
+        }
+
+    </script>
+
+
+
+
+    <!-- 语法提示悬浮部分 -->
+    <style>
+        .floattips {
+            width: 514;
+            height: 273;
+            background-color: rgb(37, 37, 38);
+            border: solid 1px rgb(69, 69, 69);
+            position: fixed;
+            transition: all 0.1s;
+            overflow-y: scroll;
+            overflow-x: hidden;
+        }
+
+        .alineoftips {
+            width: 504px;
+            height: 25px;
+            background-color: rgb(37, 37, 38);
+            line-height: 25px;
+            color: rgb(207, 207, 207);
+            padding-left: 10px;
+        }
+
+        .tipsel {
+            background-color: rgb(6, 47, 74);
+        }
+
+        .tipshelper {
+            line-height: 25px;
+            color: rgb(150, 162, 170);
+            float: right;
+            margin-right: 18px;
+            font-size: 10;
+        }
+    </style>
+    <div hidden="true" class="floattips" style="left: 0px;top: 0px;">
+
+    </div>
+
+
+
+</body>
+<script>
+
+</script>
+<canvas class="canvas"></canvas><!-- 测量长度用 -->
+
+</html>
